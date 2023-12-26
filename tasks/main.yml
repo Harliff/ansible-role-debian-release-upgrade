@@ -10,6 +10,10 @@
     next_release_name: "{{ releases[ansible_distribution_major_version | int + 1] }}"
     required_release_name: "{{ releases[required_release_version | int] }}"
 
+- name: Ask for user confirmation
+  pause:
+    prompt: 'The system going to upgrade to the "{{ required_release_name }}" release. Press CTRL+C, the A to abort or any key to continue.'
+
 - name: Generate list of versions to upgrade to
   ansible.builtin.set_fact:
     upgrades: "{{ range(next_release_version | int, required_release_version | int + 1) }}"
