@@ -43,7 +43,7 @@
     content: |
       #!/bin/sh
       systemctl reboot
-    mode: 0755
+    mode: "0755"
     owner: root
     group: root
 
@@ -52,18 +52,17 @@
   loop: "{{ upgrades }}"
   loop_control:
     loop_var: t
-    label: "Upgrade to Debian {{ t }} ({{ releases[t | int] }})"
-  when: ansible_distribution_major_version|int < required_release_version|int
+    label: "Upgrade to Debian {{ t }} ({{ releases[t] }})"
 
 - name: Remove unused packages
   ansible.builtin.apt:
-    autoremove: yes
+    autoremove: true
 
 - name: Clean up package cache
   ansible.builtin.apt:
-    autoclean: yes
+    autoclean: true
 
-- name: Ensure helper reboot scripts is removed again
+- name: Ensure helper reboot script is removed again
   ansible.builtin.file:
     path: /usr/local/sbin/shutdown
     state: absent
