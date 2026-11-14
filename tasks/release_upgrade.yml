@@ -36,32 +36,52 @@
     search_paths: /usr/local/sbin
   when: reboot.stat.exists
 
-- name: "Ensure sources.list uses {{ next_release_name }} repo"
-  ansible.builtin.replace:
-    path: /etc/apt/sources.list
-    regexp: "{{ current_release_name }}"
-    replace: "{{ next_release_name }}"
+# fix by Google AI
+- name: Find all apt source files in /etc/apt/sources.list.d/
+  ansible.builtin.find:
+    paths: /etc/apt/sources.list.d
+    patterns:
+      - "*.list"
+      - "*.sources"
+    file_type: file
+  register: apt_sources_d_files
 
-- name: Ensure new security repo is available (only for bullseye)
-  replace:
+- name: Check if main /etc/apt/sources.list exists
+  ansible.builtin.stat:
     path: /etc/apt/sources.list
-    regexp: "security.debian.org.*bullseye\/updates"
-    replace: "security.debian.org/debian-security bullseye-security"
-  when: next_release_name == "bullseye"
+  register: main_sources_list
 
-- name: "Ensure sources.list.d uses {{ next_release_name }} repo (since bookworm)"
+- name: Build complete list of apt source files to update
+  ansible.builtin.set_fact:
+    all_apt_source_files: >-
+      {{
+        (apt_sources_d_files.files | map(attribute='path') | list)
+        + (['/etc/apt/sources.list'] if main_sources_list.stat.exists else [])
+      }}
+
+- name: "Replace {{ current_release_name }} with {{ next_release_name }} in all apt sources"
   ansible.builtin.replace:
-    path: /etc/apt/sources.list.d/debian.sources
-    regexp: "{{ current_release_name }}"
+    path: "{{ item }}"
+    regexp: '\b{{ current_release_name }}\b'
     replace: "{{ next_release_name }}"
-  when: current_release_version | int > 11
+  loop: "{{ all_apt_source_files }}"
+
+- name: Ensure new security repo format is used (when upgrading to bullseye or newer)
+  ansible.builtin.replace:
+    path: "{{ item }}"
+    regexp: 'security\.debian\.org(/debian-security)?\s+{{ next_release_name }}/updates'
+    replace: 'security.debian.org/debian-security {{ next_release_name }}-security'
+  loop: "{{ all_apt_source_files }}"
+  when: next_release_version | int >= 11
 
 - name: Ensure replacing release name in additional repos
   ansible.builtin.copy:
     dest: "{{ item.key }}"
     content: "{{ item.value }}"
     mode: '0644'
-  loop: "{{ additional_source_lists | dict2items }}"
+  loop: "{{ additional_source_lists | default({}) | dict2items }}"
+
+# end of fix
 
 - name: Ensure all packages are upgraded (step 2)
   ansible.builtin.apt:
