@@ -3,11 +3,11 @@
 Fully automated upgrading of a Debian system to a specific major version, including intermediate reboots.
 
 Supported upgrade paths start at Debian 8 (jessie), and defaults to upgrading to
-Debian 11 (bullseye).
+Debian 13 (bullseye).
 
 The role will run all the required upgrades in sequence, so:
 
-- Debian 8 systems will go to 9, 10, and end up at Debian 11.
+- Debian 8 systems will go to 9, 10, 11, 12 and end up at Debian 13.
 - Debian 9 will go to 10, and then to Debian 11.
 - etc
 
@@ -75,3 +75,4 @@ Author Information
 
 Dick Visser
 Benjamin Böhm
+Harliff
