@@ -2,13 +2,12 @@
 
 Fully automated upgrading of a Debian system to a specific major version, including intermediate reboots.
 
-Supported upgrade paths start at Debian 8 (jessie), and defaults to upgrading to
-Debian 13 (bullseye).
+Supported upgrade paths start at Debian 8 (jessie), and defaults to upgrading to Debian 13 (trixie).
 
 The role will run all the required upgrades in sequence, so:
 
 - Debian 8 systems will go to 9, 10, 11, 12 and end up at Debian 13.
-- Debian 9 will go to 10, and then to Debian 11.
+- Debian 11 will go to 12, and then to Debian 13.
 - etc
 
 It is also possible to upgrade to an earlier release, for example:
@@ -16,7 +15,6 @@ It is also possible to upgrade to an earlier release, for example:
 - Debian 9 to Debian 10.
 
 Downgrading is not supported.
-
 
 This role was created to automate the upgrade of VMs on a platform that only
 offered instantiating Debian 9 VMs.
@@ -33,7 +31,7 @@ Upgrade Debian 9 to Debian 11. This includes 2 release upgrades:
 ```yaml
 - hosts: stretch
   roles:
-    - role: ansible_role_release_upgrade
+    - role: ansible-role-debian-release-upgrade
 ```
 
 ## Example 2
@@ -47,7 +45,7 @@ Upgrade Debian 8 to Debian 11. This means 3 release upgrades:
 #
 - hosts: jessie
   roles:
-    - role: ansible_role_release_upgrade
+    - role: ansible-role-debian-release-upgrade
 ```
 
 ## Example 3
@@ -59,15 +57,9 @@ provded:
 ```yaml
 - hosts: stretch
   roles:
-    - role: ansible_role_release_upgrade
+    - role: ansible-role-debian-release-upgrade
       vars:
         required_release_version: 10
-```
-
-# Testing
-
-```bash
-MOLECULE_DISTRO=debian10 molecule test
 ```
 
 Author Information
@@ -75,4 +67,4 @@ Author Information
 
 Dick Visser
 Benjamin Böhm
-Harliff
+Ilya Yakushin
