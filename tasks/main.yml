@@ -4,40 +4,34 @@
 
 - name: Set os release facts
   ansible.builtin.set_fact:
-    current_release_version: "{{ ansible_distribution_major_version }}"
+    current_release_version: "{{ ansible_distribution_major_version | int }}"
     current_release_name: "{{ releases[ansible_distribution_major_version | int] }}"
     next_release_version: "{{ ansible_distribution_major_version | int + 1 }}"
-    next_release_name: "{{ releases[ansible_distribution_major_version | int + 1] }}"
+    next_release_name: "{{ releases.get(ansible_distribution_major_version | int + 1, 'unknown') }}"
     required_release_name: "{{ releases[required_release_version | int] }}"
+    upgrades: "{{ range((ansible_distribution_major_version | int) + 1, (required_release_version | int) + 1) | list }}"
 
-- name: Ask for user confirmation
-  pause:
-    prompt: 'The system going to upgrade to the "{{ required_release_name }}" release. Press CTRL+C, the A to abort or any key to continue.'
-
-- name: Generate list of versions to upgrade to
-  ansible.builtin.set_fact:
-    upgrades: "{{ range(next_release_version | int, required_release_version | int + 1) }}"
-
-- name: Print upgrade details
+- name: Print upgrade status
   ansible.builtin.debug:
     msg: |
       {% if upgrades | count > 0 %}
-      Performing {{ upgrades | count }} upgrades:
+      Performing {{ upgrades | count }} upgrade(s):
       {% for i in upgrades %}
-        Debian {{ releases[i | int - 1] }} => Debian {{ releases[i | int] }}
+        Debian {{ releases[i - 1] }} => Debian {{ releases[i] }}
       {% endfor %}
-      {% elif required_release_version | int < current_release_version | int %}
-      Target system is Debian {{ current_release_version }} ({{ current_release_name }}), which is newer
-      than the required version {{ required_release_version }} ({{ required_release_name }}).
-      Nothing to do!
+      {% elif (required_release_version | int) < (current_release_version | int) %}
+      Target system is Debian {{ current_release_version }} ({{ current_release_name }}), which is newer than the required version {{ required_release_version }} ({{ required_release_name }}). Nothing to do!
       {% else %}
-      Target is already Debian {{ current_release_version }} ({{ current_release_name }})
-      Nothing to do!
+      Target is already Debian {{ current_release_version }} ({{ current_release_name }}). Nothing to do!
       {% endif %}
 
-- name: Ending play if target is already at required release
-  ansible.builtin.meta: end_play
-  when: upgrades|count == 0
+- name: End host execution if already at or above target release
+  ansible.builtin.meta: end_host
+  when: upgrades | count == 0
+
+- name: Ask for user confirmation
+  ansible.builtin.pause:
+    prompt: 'The system is going to upgrade to the "{{ required_release_name }}" release. Press CTRL+C, then A to abort or any key to continue.'
 
 # 'shutdown -r' does not work on Debian 8
 # this will generate errors like
